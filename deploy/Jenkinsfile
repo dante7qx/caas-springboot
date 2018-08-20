@@ -1,0 +1,51 @@
+import java.util.*;
+import java.text.SimpleDateFormat;
+def today()
+{
+    String str = "";
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+    Calendar lastDate = Calendar.getInstance();
+    lastDate.add(Calendar.MINUTE, 2);
+    str = sdf.format(lastDate.getTime());
+    return str;
+}
+def  imageTag = today()
+node() {
+  stage('代码更新') {
+    checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'dante-github', url: 'https://github.com/dante7qx/caas-cicd.git']]])
+  }
+
+  stage('打包') {
+  	sh "mvn clean package -Dmaven.test.skip=true"
+  	sh "cp s2i-demo/target/s2i-demo-1.0.jar deploy/"
+  }
+
+  stage('确认部署') {
+    timeout(10) {
+      input '确认部署吗？'
+    }
+  }
+
+  stage('构建镜像') {
+    dir('deploy/') {
+      sh "docker build -t harbor.bizjetcloud.com/spbootdev/x-springboot:$imageTag ."
+      echo 'Docker image build finished.'
+    }
+  }
+
+  stage('推送镜像') {
+  	withCredentials([usernamePassword(credentialsId: 'bizjetcloud_harbor_secret', passwordVariable: 'usrpwd', usernameVariable: 'usrname')]) {
+	    sh "docker login harbor.bizjetcloud.com -u ${usrname} -p ${usrpwd}"
+   	 	sh "docker push harbor.bizjetcloud.com/spbootdev/x-springboot:$imageTag"
+	}
+  }
+  
+  stage('清理Workspace') {
+  	cleanWs notFailBuild: true
+  }
+  
+  stage('删除本地Docker镜像') {
+  	sh "docker rmi harbor.bizjetcloud.com/spbootdev/x-springboot:$imageTag"
+  }
+}
+
