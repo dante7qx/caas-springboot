@@ -1,0 +1,4 @@
+server:
+  port: 8100
+hello:
+  msg: '[开发环境] Jenkins + CaaS + Springboot'

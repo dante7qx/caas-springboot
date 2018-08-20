@@ -1,5 +1,6 @@
-hello:
-  msg: 'Jenkins + CaaS'
+spring:
+  profiles:
+    active: db,prod
 logging:
   level:
     root: info

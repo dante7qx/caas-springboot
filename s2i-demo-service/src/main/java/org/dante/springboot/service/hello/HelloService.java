@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 public class HelloService {
 
 	public String sayHello(String msg) {
-		return "你好 --> " + msg;
+		return "您好 --> " + msg;
 	}
 	
 }
